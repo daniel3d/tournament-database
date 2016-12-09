@@ -2,12 +2,14 @@
 
 ## For Udacity Full Stack Web Developer Nanodegree
 
+![terminal](http://c3.staticflickr.com/1/40/31148507730_73851b0d70_b.jpg)
+
 #### Installation instructions
 
  * First make sure you have installed [Vagrant](https://www.vagrantup.com) and [Virtual Box](https://www.virtualbox.org) for help on this read this [wiki](https://www.udacity.com/wiki/ud197/install-vagrant)
  * Clone this repo `git clone https://github.com/daniel3d/tournament-database.git`
  * Make sure you are inside the folder `cd tournament-database` and start vagrant `vagrant up`
- * Once vagrant is up and runnign ssh to the virtual machine
+ * Once vagrant is up and running ssh to the virtual machine
  * Navigate to the project folder `cd /vagrant/tournament`
  * Run the test file `python tournament_test.py`
 
