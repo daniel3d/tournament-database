@@ -1,9 +1,10 @@
 #!/usr/bin/env python
-# 
+#
 # tournament.py -- implementation of a Swiss-system tournament
 #
 
 import psycopg2
+import random
 
 
 def connect():
@@ -15,41 +16,47 @@ def deleteMatches():
     """Remove all the match records from the database."""
     db = connect()
     cursor = db.cursor()
-    cursor.execute("DELETE FROM matches")
+    cursor.execute("""DELETE FROM matches""")
     db.commit()
-    db.close();
+    db.close()
+
 
 def deletePlayers():
     """Remove all the player records from the database."""
     db = connect()
     cursor = db.cursor()
-    cursor.execute("DELETE FROM players")
+    cursor.execute("""DELETE FROM players""")
     db.commit()
-    db.close();
+    db.close()
+
 
 def countPlayers():
     """Returns the number of players currently registered."""
     db = connect()
     cursor = db.cursor()
-    cursor.execute("SELECT COUNT(*) FROM players")
+    cursor.execute("""SELECT COUNT(*) FROM players""")
     result = cursor.fetchall()
     db.close()
     return result[0][0]
 
+
 def registerPlayer(name):
     """Adds a player to the tournament database.
-  
+
     The database assigns a unique serial id number for the player.  (This
     should be handled by your SQL database schema, not in your Python code.)
-  
+
     Args:
       name: the player's full name (need not be unique).
     """
     db = connect()
     cursor = db.cursor()
-    cursor.execute = ("INSERT INTO players (name) VALUES (%s)", (name,))
+    cursor.execute("""
+        INSERT INTO players (name) VALUES (%s)
+    """, (name,))
     db.commit()
-    db.close();
+    db.close()
+
 
 def playerStandings():
     """Returns a list of the players and their win records, sorted by wins.
@@ -64,25 +71,39 @@ def playerStandings():
         wins: the number of matches the player has won
         matches: the number of matches the player has played
     """
+    db = connect()
+    c = db.cursor()
+    c.execute("""SELECT * FROM standings ORDER BY score DESC""")
+    result = c.fetchall()
+    db.close()
+    return result
 
 
-def reportMatch(winner, loser):
+def reportMatch(player, opponent, result):
     """Records the outcome of a single match between two players.
 
     Args:
-      winner:  the id number of the player who won
-      loser:  the id number of the player who lost
+      player:  the id number of the frist player
+      opponent:  the id number of the second player
+      result:  the id of the player who won or 0 for a draw
     """
- 
- 
+    db = connect()
+    c = db.cursor()
+    c.execute("""
+        INSERT INTO matches (player, opponent, result) VALUES(%s,%s,%s)
+    """, (player, opponent, result))
+    db.commit()
+    db.close()
+
+
 def swissPairings():
     """Returns a list of pairs of players for the next round of a match.
-  
+
     Assuming that there are an even number of players registered, each player
     appears exactly once in the pairings.  Each player is paired with another
     player with an equal or nearly-equal win record, that is, a player adjacent
     to him or her in the standings.
-  
+
     Returns:
       A list of tuples, each of which contains (id1, name1, id2, name2)
         id1: the first player's unique id
@@ -90,5 +111,30 @@ def swissPairings():
         id2: the second player's unique id
         name2: the second player's name
     """
+    db = connect()
+    c = db.cursor()
+    c.execute("""
+        SELECT id, name, wins, matches FROM standings ORDER BY score DESC""")
+    standings = c.fetchall()
+    db.close()
+
+    pairings = []
+    for i in range(0, len(standings) / 2):
+        player = standings[2 * i]
+        opponent = standings[(2 * i) + 1]
+        pairings.append((player[0], player[1], opponent[0], opponent[1]))
+
+    return pairings
 
 
+def playGame(players):
+    """Simulate a game.
+
+    Args:
+        players: list of the players ids
+
+    Returns:
+        id of the player who win the game or 0 for a draw
+    """
+    result = random.randrange(-1, 2)
+    return 0 if result == -1 else players[result]

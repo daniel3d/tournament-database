@@ -6,16 +6,13 @@
 -- You can write comments in this file by starting them with two dashes, like
 -- these lines here.
 
-
--- Create the database
-DROP DATABASE IF EXISTS tournament;
-CREATE DATABASE tournament;
-
 -- Create the players table
+DROP  TABLE IF EXISTS players CASCADE;
 CREATE TABLE players ( id SERIAL PRIMARY KEY, name TEXT NOT NULL );
 
 -- Create the matches table 
 -- result field holds player id or 0 for a draw
+DROP TABLE IF EXISTS matches CASCADE;
 CREATE TABLE matches (
 	id SERIAL PRIMARY KEY, 
 	player INT REFERENCES players(id), 
@@ -24,28 +21,30 @@ CREATE TABLE matches (
 );
 
 -- Create View standings
+DROP VIEW IF EXISTS standings;
 CREATE VIEW standings AS
 SELECT 
 	p.id, 
 	p.name,
-	COUNT(*) as matches,
-	SUM(m.wins) as wins,
-	SUM(m.loses) as loses,
-	SUM(m.draws) as draws,
-	SUM(m.wins - m.loses + m.draws) as score
-FROM (SELECT 
+	COUNT(m.id) as matches,
+	SUM(coalesce(m.wins, 0)) as wins,
+	SUM(coalesce(m.loses, 0)) as loses,
+	SUM(coalesce(m.draws, 0)) as draws,
+    SUM(coalesce(m.score, 0)) as score
+FROM players AS p LEFT JOIN (SELECT 
 		player AS id,
-		CASE result WHEN player THEN 1 ELSE 0 END AS wins, 
-		CASE result WHEN player OR 0 THEN 0 ELSE 1 END AS loses, 
-		CASE result WHEN 0 THEN 1 ELSE 0 END AS draws 
-		FROM matches 
+		CASE WHEN result = player THEN 1 ELSE 0 END AS wins, 
+		CASE WHEN result = player OR result = 0 THEN 0 ELSE 1 END AS loses,
+		CASE WHEN result = 0 THEN 1 ELSE 0 END AS draws,
+        CASE WHEN result = 0 THEN 0.5 WHEN result = player THEN 1.0 ELSE 0.0 END AS score
+		FROM matches
 	UNION ALL
 	SELECT 
 		opponent AS id, 
-		CASE result WHEN player THEN 1 ELSE 0 END AS wins, 
-		CASE result WHEN player OR 0 THEN 0 ELSE 1 END AS loses, 
-		CASE result WHEN 0 THEN 1 ELSE 0 END AS draws 
-		FROM matches 
-) as m LEFT JOIN players AS p ON p.id = m.id
-GROUP BY m.id
-ORDER BY score DESC
+		CASE WHEN result = opponent THEN 1 ELSE 0 END AS wins, 
+		CASE WHEN result = opponent OR result = 0 THEN 0 ELSE 1 END AS loses,
+		CASE WHEN result = 0 THEN 1 ELSE 0 END AS draws,
+		CASE WHEN result = 0 THEN 0.5 WHEN result = opponent THEN 1.0 ELSE 0.0 END AS score
+		FROM matches
+) as m ON p.id = m.id
+GROUP BY p.id;
