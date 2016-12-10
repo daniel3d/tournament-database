@@ -11,7 +11,8 @@
  * Make sure you are inside the folder `cd tournament-database` and start vagrant `vagrant up`
  * Once vagrant is up and running ssh to the virtual machine
  * Navigate to the project folder `cd /vagrant/tournament`
- * Run the test file `python tournament_test.py`
+ * Run `psql -f tournament.sql` to create the database schema
+ * And finally to run the test execute `python tournament_test.py`
 
 ### Stuff used to make this:
 
